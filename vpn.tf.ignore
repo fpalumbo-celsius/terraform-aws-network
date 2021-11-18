@@ -1,0 +1,50 @@
+resource "aws_vpn_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.effort}-${var.environment}-vpn-gateway"
+    Environment = var.environment
+    Effort = var.effort
+  }
+}
+
+resource "aws_vpn_gateway_attachment" "main" {
+  vpc_id         = aws_vpc.main.id
+  vpn_gateway_id = aws_vpn_gateway.main.id
+}
+
+resource "aws_vpn_gateway_route_propagation" "main" {
+  vpn_gateway_id = aws_vpn_gateway.main.id
+  route_table_id = aws_route_table.public.id
+}
+
+// @TODO: aws_customer_gateway.main to common environment, as it's shared in the region
+resource "aws_customer_gateway" "main" {
+  bgp_asn    = 65000
+  ip_address = var.belgrade_vpn_ip
+  type       = "ipsec.1"
+
+  tags = {
+    Name = "TELENOR-BG-STAGING"
+    Environment = "staging"
+    Effort = "core"
+  }
+}
+
+resource "aws_vpn_connection" "main" {
+  vpn_gateway_id      = aws_vpn_gateway.main.id
+  customer_gateway_id = aws_customer_gateway.main.id
+  type                = "ipsec.1"
+  static_routes_only  = true
+
+  tags = {
+    Name = "${var.effort}-${var.environment}-s2s-connection"
+    Environment = var.environment
+    Effort = var.effort
+  }
+}
+
+resource "aws_vpn_connection_route" "main" {
+  destination_cidr_block = var.belgrade_vpn_ip_subnet
+  vpn_connection_id      = aws_vpn_connection.main.id
+}
