@@ -29,7 +29,7 @@ variable "vpn_cidr_blocks" {
 
 variable "environment" {
     type = string
-    default = "staging"
+    default = "staging-new-test"
 }
 
 variable "effort" {
